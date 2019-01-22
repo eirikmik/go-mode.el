@@ -279,17 +279,22 @@ You can install gogetdoc with 'go get -u github.com/zmb3/gogetdoc'."
       (error "Cannot use gogetdoc on a buffer without a file name"))
   (let ((posn (format "%s:#%d" (shell-quote-argument (file-truename buffer-file-name)) (1- (position-bytes point))))
         (out (godoc--get-buffer "<at point>")))
-  (with-current-buffer (get-buffer-create "*go-gogetdoc-input*")
-    (setq buffer-read-only nil)
-    (erase-buffer)
-    (go--insert-modified-files)
-    (call-process-region (point-min) (point-max) "gogetdoc" nil out nil
-                         "-modified"
-                         (format "-pos=%s" posn)))
-  (with-current-buffer out
-    (goto-char (point-min))
-    (godoc-mode)
-    (display-buffer (current-buffer) t))))
+    (with-current-buffer (get-buffer-create "*go-gogetdoc-input*")
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (go--insert-modified-files)
+      (call-process-region (point-min) (point-max) "gogetdoc" nil out nil
+                           "-modified"
+                           (format "-pos=%s" posn)))
+    (with-current-buffer out
+      (goto-char (point-min))
+      (godoc-mode)
+      (display-buffer (current-buffer) t)
+      (setq inhibit-read-only 't)
+      ;; the following works for most simple docs. Should rewrite to use json format so the proper src block can be fontified
+      (org-src-font-lock-fontify-block "go" 1 (re-search-forward "^\n" nil nil 2))
+      (setq inhibit-read-only 'nil))))
+
 
 (defun go--kill-new-message (url)
   "Make URL the latest kill and print a message."
